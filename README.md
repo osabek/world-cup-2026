@@ -5,10 +5,15 @@ tables and best-third race update live, tap teams through the knockout bracket, 
 crown a champion. Click any flag to see that team's real 26-man squad as FIFA-style
 player cards.
 
-## How to start it
-Double-click **`Start World Cup Game.command`** (or run `node server.js` here), then
-open <http://localhost:8336>. Works on iPads/phones on the same Wi-Fi via this Mac's
-IP address, e.g. `http://192.168.x.x:8336`.
+## How to play it
+**Hosted (any device, anywhere):** <https://osabek.github.io/world-cup-2026/>
+
+**Locally:** double-click **`Start World Cup Game.command`** (or run `node server.js`
+here), then open <http://localhost:8336>. Works on iPads/phones on the same Wi-Fi via
+this Mac's IP address, e.g. `http://192.168.x.x:8336`.
+
+Scenario progress saves in the browser per device/site, so the hosted game and the
+local game each keep their own picks.
 
 ## How real scores get in
 Settings tab → **Real score updates**:
