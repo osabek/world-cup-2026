@@ -9,7 +9,7 @@ const ROOT = __dirname;
 const MIME = {
   ".html": "text/html", ".css": "text/css", ".js": "text/javascript",
   ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
+  ".ico": "image/x-icon", ".webmanifest": "application/manifest+json",
 };
 
 /* World Cup window with margin */
