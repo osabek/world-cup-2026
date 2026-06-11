@@ -19,6 +19,29 @@ player cards — with real photos, and tap any card for the player's full profil
 - **💾 Scenario slots** — save/load named what-if universes (Settings).
 - **⚔️ Team battle** — compare any two teams line by line (Teams tab).
 - **🔊 Stadium sounds** — goal horns, whistles, crowd roar (toggle in Settings).
+- **👥 League play (multiplayer)** — create an account (made-up username + 6-digit
+  PIN, no email/personal info), start a league, share the 6-letter invite code, and
+  compete on a live leaderboard. Your scenario picks double as predictions. Friends'
+  upcoming picks stay hidden until kickoff; tap a name to see their scored picks after.
+- **⏱️ Pick lock** — predictions close 5 minutes before kickoff (enforced on the
+  server too). Matches show a countdown and an "about to begin" warning.
+- **🔮 Auto-predictor** — one tap fills a sensible predicted score for any game (or all
+  open games), based on team strength — handy when you don't know the teams.
+
+## League play setup (Firebase)
+The game uses a free Firebase project (`wc26-road-to-the-cup`) for accounts and the
+shared leaderboard. It's already provisioned: Firestore + security rules
+(`firestore.rules`), email/password auth, and `osabek.github.io` authorized.
+
+- **Admin:** whoever registers the username **`omar`** is the league admin (set in
+  Firestore `config/setup.adminUsername`). The admin can remove/ban duplicate or
+  troublemaker accounts and push kickoff deadlines to the server. **Register `omar`
+  first** so nobody else claims it.
+- **Deadlines:** the server enforces the 5-minute lock using `config/deadlines`.
+  Group-stage kickoffs are seeded; once knockout kickoff times are published, the admin
+  taps "Sync kickoff deadlines to server" in the League → Admin panel to extend it.
+- Config values in `firebase-config.js` are public by design — security lives in the
+  rules, not in hiding them.
 
 ## How to play it
 **Hosted (any device, anywhere):** <https://osabek.github.io/world-cup-2026/>
