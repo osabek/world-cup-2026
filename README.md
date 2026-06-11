@@ -3,7 +3,22 @@
 A kid-friendly FIFA World Cup 2026 scenario game. Fill in scores, watch the group
 tables and best-third race update live, tap teams through the knockout bracket, and
 crown a champion. Click any flag to see that team's real 26-man squad as FIFA-style
-player cards.
+player cards — with real photos, and tap any card for the player's full profile
+(bio, vitals, club & national-team career, YouTube highlights), all live from Wikipedia.
+
+## Features
+- **🎲 Simulate** — sim one group, all groups, the rest of the bracket, or the whole
+  tournament. Results are weighted by Team Power ratings, upsets included.
+- **🥅 Penalty shootouts** — drawn knockout games can be settled with a tap-to-shoot
+  shootout mini-game.
+- **📺 Live tab + today strip** — live games with match clocks, today's kickoff times
+  (local), finished scores; refreshes every minute from ESPN's feed.
+- **🏅 Prediction scorecard** — scenario picks double as predictions: 3 pts for the
+  exact score, 1 pt for the right outcome, 1 pt for a correct bracket pick — scored
+  automatically as real results sync in. Add a rival for a head-to-head league.
+- **💾 Scenario slots** — save/load named what-if universes (Settings).
+- **⚔️ Team battle** — compare any two teams line by line (Teams tab).
+- **🔊 Stadium sounds** — goal horns, whistles, crowd roar (toggle in Settings).
 
 ## How to play it
 **Hosted (any device, anywhere):** <https://osabek.github.io/world-cup-2026/>
