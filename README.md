@@ -27,6 +27,21 @@ player cards — with real photos, and tap any card for the player's full profil
   server too). Matches show a countdown and an "about to begin" warning.
 - **🔮 Auto-predictor** — one tap fills a sensible predicted score for any game (or all
   open games), based on team strength — handy when you don't know the teams.
+- **🏟️ Clubhouse** — the fun hub:
+  - **🃏 Sticker album** — collect player stickers (real photos, gold/silver/bronze
+    rarity), open packs with a flip-reveal, complete teams, and **gift spare duplicates
+    to league friends** (they land in their album via a Firestore mailbox).
+  - **🏅 Badges, 🔥 streaks & MVP** — 16 achievement badges, a daily play streak that
+    rewards packs, and a match-day MVP shout-out on the league leaderboard.
+  - **🔮 "What needs to happen"** — tap a group for plain-English qualification scenarios,
+    see your champion pick's **Path to Glory**, and spot **upsets** on the bracket.
+  - **🎽 My Kit + reactions + trivia** — pick a kit colour, mascot and favourite team
+    (themes the app + shows by your name in the league), fire preset emoji reactions at
+    friends, and answer a daily trivia question for stars and a free pack.
+
+Earn packs by playing daily (streak), every 10 predictions, winning trivia, and from
+badges. Stickers/avatar sync to the cloud when signed in (so they follow you across
+devices) and back up locally for offline play.
 
 ## League play setup (Firebase)
 The game uses a free Firebase project (`wc26-road-to-the-cup`) for accounts and the
