@@ -47,15 +47,38 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // a player's sticker collection + avatar (cloud backup / cross-device)
+    match /collections/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid && notBanned();
+    }
+
     match /leagues/{lid} {
       allow read: if signedIn();
       allow create: if signedIn() && notBanned() && request.resource.data.ownerUid == request.auth.uid;
       allow update, delete: if isAdmin();
 
+      function isMember() {
+        return exists(/databases/$(database)/documents/leagues/$(lid)/members/$(request.auth.uid));
+      }
+
       match /members/{uid} {
         allow read: if signedIn();
-        allow create: if signedIn() && notBanned() && request.auth.uid == uid;
+        allow create, update: if signedIn() && notBanned() && request.auth.uid == uid;
         allow delete: if isAdmin() || request.auth.uid == uid;
+      }
+
+      // sticker gifts: a member sends one of their spare stickers to another member
+      match /gifts/{gid} {
+        allow read: if signedIn() && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+        allow create: if signedIn() && notBanned() && request.resource.data.from == request.auth.uid && isMember();
+        allow delete: if signedIn() && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+      }
+
+      // emoji reactions on the leaderboard (one doc per target player, counters)
+      match /reactions/{tuid} {
+        allow read: if signedIn();
+        allow write: if signedIn() && notBanned() && isMember();
       }
 
       // one doc per pick: id = "<uid>_m<matchNumber>"

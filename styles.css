@@ -498,6 +498,131 @@ table.career { width: 100%; border-collapse: collapse; background: #fff; border-
 .lg-admin h2 { background: #b71c1c; }
 .lg-del { font-size: .75rem; padding: 8px 12px; margin-left: auto; }
 
+/* ───────── clubhouse ───────── */
+.cb-sub { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.cb-tab { font-family: 'Fredoka'; font-weight: 700; border: none; border-radius: 999px; padding: 9px 16px;
+  background: rgba(255,255,255,.92); color: var(--ink); cursor: pointer; box-shadow: var(--shadow); }
+.cb-tab.on { background: var(--gold); color: #5b3c00; }
+.cb-packcount { margin-left: auto; background: #fff; border-radius: 999px; padding: 7px 14px; font-weight: 700; box-shadow: var(--shadow); cursor: pointer; }
+.cb-streak { background: #ff7043; color: #fff; border-radius: 999px; padding: 7px 14px; font-weight: 700; box-shadow: var(--shadow); }
+.cb-body { background: rgba(255,255,255,.95); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); border: 4px solid #fff; }
+.cb-help { font-size: .85rem; color: #5c7a5e; margin-top: 12px; line-height: 1.5; }
+
+/* album */
+.album-teams { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.album-pill { border: 3px solid transparent; background: #f3f9f3; border-radius: 12px; padding: 6px 10px;
+  font-family: 'Fredoka'; font-weight: 600; cursor: pointer; font-size: 1.1rem; }
+.album-pill small { font-size: .7rem; color: #6b8a6d; }
+.album-pill.on { border-color: var(--sky); background: #eaf6ff; }
+.album-pill.done { background: var(--qual1); }
+.album-head { display: flex; align-items: center; gap: 8px; font-size: 1.3rem; margin-bottom: 12px; }
+.album-prog { margin-left: auto; font-size: .9rem; font-weight: 700; color: #1d6b24; }
+.sticker-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.sticker { position: relative; border-radius: 12px; padding: 8px; text-align: center; aspect-ratio: 3/4;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow);
+  border: 2px solid rgba(255,255,255,.6); cursor: pointer; }
+.sticker.empty { background: repeating-linear-gradient(45deg, #e7eee7 0 8px, #dde7dd 8px 16px); border-style: dashed; cursor: default; box-shadow: none; }
+.sticker.empty .s-q { font-family: 'Luckiest Guy'; font-size: 2rem; color: #b6c8b6; }
+.sticker.empty .s-n { font-size: .7rem; color: #9ab39c; }
+.sticker.gold { background: linear-gradient(150deg, #e8c66a, #c08f1f); color: #3a2a00; }
+.sticker.silver { background: linear-gradient(150deg, #e8e8ee, #a8aebd); color: #2c3140; }
+.sticker.bronze { background: linear-gradient(150deg, #e3a87b, #b06f3c); color: #3d2410; }
+.sticker .s-ovr { position: absolute; top: 5px; left: 7px; font-family: 'Luckiest Guy'; font-size: 1.1rem; }
+.sticker .s-photo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,.4); }
+.sticker .s-nm { font-weight: 700; font-size: .8rem; margin-top: 4px; line-height: 1; }
+.sticker .s-dup { position: absolute; top: 5px; right: 6px; background: #14541f; color: #7CFC8e; border-radius: 999px; font-size: .65rem; font-weight: 700; padding: 1px 6px; }
+
+/* packs */
+.packs-wrap { text-align: center; }
+.pack-big { font-size: 6rem; animation: bounce 1.6s infinite; }
+.pack-have { font-size: 1.1rem; margin: 10px 0; }
+.sim-btn.dim { background: #b6c8b6; cursor: default; }
+.reveal-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 10px; }
+.reveal-card { width: 120px; aspect-ratio: 3/4; border-radius: 12px; position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; box-shadow: var(--shadow); transform: rotateY(90deg); animation: flipin .5s forwards; }
+@keyframes flipin { to { transform: rotateY(0); } }
+.reveal-card.gold { background: linear-gradient(150deg, #e8c66a, #c08f1f); }
+.reveal-card.silver { background: linear-gradient(150deg, #e8e8ee, #a8aebd); }
+.reveal-card.bronze { background: linear-gradient(150deg, #e3a87b, #b06f3c); }
+.reveal-card.newone { box-shadow: 0 0 0 3px var(--gold), 0 0 22px var(--gold); }
+.reveal-card .s-ovr { position: absolute; top: 6px; left: 8px; font-family: 'Luckiest Guy'; }
+.reveal-card .s-photo { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,.4); }
+.reveal-card .s-nm { font-weight: 700; font-size: .85rem; margin-top: 4px; }
+.reveal-card .s-team { font-size: 1.2rem; }
+.reveal-card .s-new { position: absolute; bottom: 6px; background: var(--hot); color: #fff; font-size: .6rem; font-weight: 700; border-radius: 999px; padding: 1px 7px; }
+.reveal-card .s-old { position: absolute; bottom: 6px; background: rgba(0,0,0,.3); color: #fff; font-size: .6rem; border-radius: 999px; padding: 1px 7px; }
+
+/* badges */
+.badge-head { font-family: 'Luckiest Guy'; color: #b8860b; font-size: 1.2rem; margin-bottom: 12px; }
+.badge-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.badge { background: #f3f9f3; border-radius: 14px; padding: 12px; text-align: center; box-shadow: var(--shadow); }
+.badge.locked { opacity: .55; filter: grayscale(.6); }
+.badge.got { background: linear-gradient(150deg, #fff7da, #ffe9a0); }
+.badge .b-e { font-size: 2.2rem; }
+.badge .b-n { font-weight: 700; }
+.badge .b-d { font-size: .72rem; color: #6b8a6d; }
+
+/* trivia */
+.trivia-card { text-align: center; }
+.tv-q { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; }
+.tv-opts { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.tv-opt { font-family: 'Fredoka'; font-weight: 600; font-size: 1rem; padding: 14px; border: none; border-radius: 12px;
+  background: #eaf6ff; cursor: pointer; box-shadow: var(--shadow); }
+.tv-opt.right { background: var(--qual1); }
+.tv-opt.wrong { opacity: .5; }
+.tv-stars { margin-top: 14px; font-weight: 700; }
+
+/* kit / avatar */
+.kit-card { max-width: 460px; margin: 0 auto; }
+.kit-preview { width: 130px; height: 150px; margin: 0 auto 16px; border-radius: 14px 14px 24px 24px;
+  background: var(--kit); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow); position: relative; }
+.kit-preview .kit-shirt { font-size: 3.5rem; }
+.kit-preview .kit-flag { position: absolute; bottom: 8px; font-size: 1.4rem; }
+.kit-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.kit-row > span { font-weight: 700; min-width: 110px; }
+.kit-opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.kit-dot { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; box-shadow: var(--shadow); cursor: pointer; }
+.kit-dot.on { outline: 3px solid var(--ink); }
+.kit-emoji { font-size: 1.5rem; background: #f3f9f3; border: 3px solid transparent; border-radius: 10px; cursor: pointer; padding: 2px 6px; }
+.kit-emoji.on { border-color: var(--sky); background: #eaf6ff; }
+.kit-fav { font-family: 'Fredoka'; font-weight: 600; padding: 8px 12px; border-radius: 10px; border: 2px solid #cfe3cf; }
+
+/* scenario explainer */
+.scn-btn { font-family: 'Fredoka'; font-weight: 700; font-size: .72rem; border: none; border-radius: 999px;
+  background: rgba(255,255,255,.85); color: #7c4dbe; padding: 3px 10px; margin-left: 10px; cursor: pointer; vertical-align: middle; }
+.scn-wrap { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.scn-row { border-radius: 12px; padding: 12px 14px; border-left: 6px solid #ccc; background: #f3f9f3; }
+.scn-row.in { border-color: #46c258; background: var(--qual1); }
+.scn-row.maybe { border-color: var(--gold); background: #fff8e1; }
+.scn-row.out { border-color: #e57373; background: #ffebee; }
+.scn-team { font-size: 1.05rem; }
+.scn-head { font-weight: 700; margin: 2px 0; }
+.scn-line { font-size: .9rem; color: #4a5d4b; }
+
+/* path to glory + upset */
+.ptg { margin-top: 26px; background: rgba(20,84,31,.55); border-radius: 16px; padding: 16px; }
+.ptg h3 { font-family: 'Luckiest Guy'; color: #fff; text-align: center; margin-bottom: 12px; }
+.ptg-steps { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.ptg-step { background: #fff; border-radius: 12px; padding: 8px 12px; font-size: .85rem; display: flex; flex-direction: column; align-items: center; min-width: 120px; }
+.ptg-step b { color: var(--sky); }
+.ptg-step.won { background: var(--qual1); }
+.ptg-step.lost { background: #ffebee; opacity: .7; }
+.upset-tag { font-size: .58rem; font-weight: 700; background: var(--hot); color: #fff; border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
+
+/* mvp + reactions + avatars in league */
+.mvp-banner { background: linear-gradient(90deg, #fff7da, #ffe9a0); border-radius: 14px; padding: 12px 16px;
+  font-weight: 700; text-align: center; box-shadow: var(--shadow); border: 3px solid var(--gold); }
+.mini-av { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+  border-radius: 6px; background: var(--kit, #1877d2); font-size: .95rem; vertical-align: middle; }
+.react-sum { font-size: .72rem; margin-left: 6px; }
+.react-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 10px 4px 2px; }
+.react-btn { font-size: 1.2rem; background: #f3f9f3; border: none; border-radius: 10px; padding: 5px 9px; cursor: pointer; box-shadow: var(--shadow); }
+.react-btn:active { transform: scale(.85); }
+.gift-list { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.gift-friend { font-family: 'Fredoka'; font-weight: 700; font-size: 1.05rem; background: #f3f9f3; border: none;
+  border-radius: 12px; padding: 12px; cursor: pointer; box-shadow: var(--shadow); }
+.gift-friend:hover { background: #eaf6ff; }
+
 /* ───────── penalty shootout ───────── */
 .pk-box { max-width: 520px; }
 .pk-sub { color: #5c7a5e; }

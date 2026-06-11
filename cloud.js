@@ -51,6 +51,7 @@ async function loadProfile() {
   Cloud.profile = snap.data();
   const setup = await fb.getDoc(fb.doc(fb.db, "config", "setup"));
   Cloud.profile.isAdmin = setup.exists() && setup.data().adminUsername === Cloud.profile.username;
+  if (Cloud.profile.avatar && window.Extras && Extras.loadCloudCollection) Extras.loadCloudCollection(null, Cloud.profile.avatar);
   if (Cloud.profile.leagueId) await attachLeague(Cloud.profile.leagueId);
 }
 
@@ -106,15 +107,18 @@ async function joinLeagueByCode(code) {
 }
 async function joinLeagueById(id) {
   await fb.setDoc(fb.doc(fb.db, "leagues", id, "members", Cloud.user.uid), {
-    displayName: Cloud.profile.displayName, joinedAt: fb.serverTimestamp(),
+    displayName: Cloud.profile.displayName, avatar: avatarNow(), joinedAt: fb.serverTimestamp(),
   });
   await fb.setDoc(fb.doc(fb.db, "users", Cloud.user.uid), { leagueId: id }, { merge: true });
   Cloud.profile.leagueId = id;
   await attachLeague(id);
 }
+function avatarNow() {
+  try { return (window.Extras && Extras.data && Extras.data.avatar) || null; } catch { return null; }
+}
 function detachLeague() {
   Cloud.unsubs.forEach(u => u()); Cloud.unsubs = [];
-  Cloud.league = null; Cloud.members = {}; Cloud.picks = {};
+  Cloud.league = null; Cloud.members = {}; Cloud.picks = {}; Cloud.reactions = {};
 }
 async function attachLeague(id) {
   detachLeague();
@@ -134,6 +138,97 @@ async function attachLeague(id) {
     });
     renderLeague();
   }));
+  // emoji reactions on the leaderboard
+  Cloud.reactions = {};
+  Cloud.unsubs.push(fb.onSnapshot(fb.collection(fb.db, "leagues", id, "reactions"), s => {
+    Cloud.reactions = {};
+    s.forEach(d => Cloud.reactions[d.id] = d.data());
+    renderLeague();
+  }));
+  // incoming sticker gifts addressed to me
+  Cloud.unsubs.push(fb.onSnapshot(
+    fb.query(fb.collection(fb.db, "leagues", id, "gifts"), fb.where("to", "==", Cloud.user.uid)),
+    async s => {
+      for (const d of s.docs) {
+        const g = d.data();
+        if (window.Extras && Extras.applyIncomingGift) Extras.applyIncomingGift(g.key);
+        await fb.deleteDoc(d.ref).catch(() => {});
+      }
+    }));
+  // pull my cloud-saved sticker collection + avatar
+  try {
+    const c = await fb.getDoc(fb.doc(fb.db, "collections", Cloud.user.uid));
+    if (c.exists() && window.Extras && Extras.loadCloudCollection) Extras.loadCloudCollection(c.data().col || {}, c.data().avatar);
+  } catch {}
+}
+
+/* ───────── stickers: cloud mirror + gifting ───────── */
+Cloud.saveCollection = async function (col, avatar) {
+  if (!Cloud.on || !Cloud.user) return;
+  try { await fb.setDoc(fb.doc(fb.db, "collections", Cloud.user.uid), { col, avatar: avatar || null, at: fb.serverTimestamp() }); } catch {}
+};
+Cloud.pushAvatar = async function (avatar) {
+  if (!Cloud.on || !Cloud.user) return;
+  try {
+    await fb.setDoc(fb.doc(fb.db, "users", Cloud.user.uid), { avatar }, { merge: true });
+    if (Cloud.profile?.leagueId)
+      await fb.setDoc(fb.doc(fb.db, "leagues", Cloud.profile.leagueId, "members", Cloud.user.uid), { avatar }, { merge: true });
+  } catch {}
+};
+Cloud.openGiftPicker = function (key) {
+  const lid = Cloud.profile.leagueId;
+  const friends = Object.entries(Cloud.members).filter(([uid]) => uid !== Cloud.user.uid);
+  const pl = (window.Extras) ? Extras._players?.find(x => x.key === key) : null;
+  const name = pl ? pl.p.name : "this sticker";
+  if (!friends.length) { toast("No league friends yet — invite some on the League tab!"); return; }
+  document.querySelector("#team-modal").innerHTML = `<div class="tm-head" style="background:#00897b">
+    <h2>🎁 Send ${escC(name)} to…</h2><button class="tm-close" data-act="close-modal">✕</button></div>
+    <div class="gift-list">${friends.map(([uid, m]) =>
+      `<button class="gift-friend" data-act="gift-send" data-uid="${uid}" data-key="${escC(key)}">
+        ${(m.avatar && m.avatar.mascot) || "⚽"} ${escC(m.displayName)}</button>`).join("")}</div>`;
+  document.querySelector("#modal-backdrop").classList.remove("hidden");
+};
+async function sendGift(toUid, key) {
+  const lid = Cloud.profile.leagueId;
+  try {
+    await fb.addDoc(fb.collection(fb.db, "leagues", lid, "gifts"),
+      { from: Cloud.user.uid, fromName: Cloud.profile.displayName, to: toUid, key, at: fb.serverTimestamp() });
+    if (window.Extras && Extras.removeForGift) Extras.removeForGift(key);
+    document.querySelector("#modal-backdrop").classList.add("hidden");
+    cloudToast("🎁 Sticker sent! It'll pop into their Album.");
+  } catch (e) { cloudToast("Couldn't send: " + e.message); }
+}
+async function reactTo(uid, emoji) {
+  const lid = Cloud.profile.leagueId;
+  try {
+    await fb.setDoc(fb.doc(fb.db, "leagues", lid, "reactions", uid),
+      { [emoji]: fb.increment(1) }, { merge: true });
+    if (window.sfx) sfx("tick");
+  } catch {}
+}
+/* who scored the most points from matches that finished TODAY */
+function matchdayMVP() {
+  if (!window.App || !App.schedule) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const groupNums = new Set(App.schedule.groupMatches.map(m => m.match));
+  const todayMatchNums = new Set();
+  for (const m of App.schedule.groupMatches) if (m.date === today) todayMatchNums.add(m.match);
+  for (const arr of [App.schedule.knockout.R32, App.schedule.knockout.R16, App.schedule.knockout.QF, App.schedule.knockout.SF])
+    for (const m of arr) if (m.date === today) todayMatchNums.add(m.match);
+  if (!todayMatchNums.size) return null;
+  let best = null;
+  for (const [uid, m] of Object.entries(Cloud.members)) {
+    let pts = 0, any = false;
+    const picks = Cloud.picks[uid] || {};
+    for (const num of todayMatchNums) {
+      const real = App.state.real["m" + num];
+      if (!real || real.live) continue;
+      const s = scorePick(picks["m" + num], real, groupNums.has(num));
+      if (s != null) { pts += s; any = true; }
+    }
+    if (any && (!best || pts > best.pts)) best = { uid, name: m.displayName, pts };
+  }
+  return best && best.pts > 0 ? best : null;
 }
 
 /* ───────── pick submission (called from app.js on every local pick) ───────── */
@@ -265,16 +360,29 @@ function renderLeague() {
 
   const rows = memberTotals();
   const medals = ["🥇", "🥈", "🥉"];
-  let html = `<div class="lg-wrap">
-    <div class="group-card lg-card"><h2>🏟️ ${escC(Cloud.league.name).toUpperCase()}</h2>
+  const REACTS = ["🔥", "⚽", "😂", "😱", "👏"];
+  const av = uid => (Cloud.members[uid] && Cloud.members[uid].avatar) || null;
+  const chip = uid => { const a = av(uid); return `<span class="mini-av" style="--kit:${a && a.kit || "#1877d2"}">${a && a.mascot || "⚽"}</span>`; };
+  const mvp = matchdayMVP();
+  let html = `<div class="lg-wrap">`;
+  if (mvp) html += `<div class="mvp-banner">⭐ Today's MVP: ${chip(mvp.uid)} <b>${escC(mvp.name)}</b> with ${mvp.pts} pts! 🏅</div>`;
+  html += `<div class="group-card lg-card"><h2>🏟️ ${escC(Cloud.league.name).toUpperCase()}</h2>
       <div class="lg-codebar">Invite code: <b class="lg-code">${escC(Cloud.league.code)}</b>
         <span class="setting-help">friends: open the game → 👥 League → Join with code</span></div>
-      <table class="standings"><tr><th></th><th>Player</th><th>Pts</th><th>🎯 Exact</th><th>Picks in</th></tr>
-      ${rows.map((r, i) => `<tr class="${r.uid === Cloud.user.uid ? "q1" : ""}">
+      <table class="standings"><tr><th></th><th>Player</th><th>Pts</th><th>🎯 Exact</th><th>Picks</th></tr>
+      ${rows.map((r, i) => {
+        const rc = Cloud.reactions[r.uid] || {};
+        const rsum = REACTS.map(em => rc[em] ? `${em}${rc[em]}` : "").filter(Boolean).join(" ");
+        return `<tr class="${r.uid === Cloud.user.uid ? "q1" : ""}">
         <td>${medals[i] || i + 1}</td>
-        <td class="teamcell lg-member" data-uid="${r.uid}">${escC(r.name)}${r.uid === Cloud.user.uid ? " (you)" : ""}</td>
-        <td class="pts">${r.pts}</td><td>${r.exact}</td><td>${r.made}</td></tr>`).join("")}
+        <td class="teamcell lg-member" data-uid="${r.uid}">${chip(r.uid)} ${escC(r.name)}${r.uid === Cloud.user.uid ? " (you)" : ""}
+          ${rsum ? `<span class="react-sum">${rsum}</span>` : ""}</td>
+        <td class="pts">${r.pts}</td><td>${r.exact}</td><td>${r.made}</td></tr>`;
+      }).join("")}
       </table>
+      <div class="react-bar">React to friends: ${REACTS.map(em =>
+        `<button class="react-btn" data-act="lg-react" data-em="${em}">${em}</button>`).join("")}
+        <span class="setting-help" id="react-target">pick a player above, then tap an emoji</span></div>
       <p class="sc-help">Tap a player to peek at their picks 👀 (upcoming picks stay secret until kickoff lock!).
       Scoring: 🎯 exact score 3 pts · ✅ right result 1 pt · bracket pick 1 pt.</p>
     </div>
@@ -333,9 +441,19 @@ document.body.addEventListener("click", async (e) => {
     location.replace(location.pathname + "?fresh=" + Date.now());
     return;
   }
+  if (act === "gift-send") { await sendGift(el.dataset.uid, el.dataset.key); return; }
+  if (act === "lg-react") {
+    if (!Cloud._reactTarget) { cloudToast("Tap a player's name first, then the emoji! 👆"); return; }
+    await reactTo(Cloud._reactTarget, el.dataset.em); return;
+  }
   if (!act || !act.startsWith("lg-")) {
     const member = e.target.closest(".lg-member[data-uid]");
-    if (member) renderPeek(member.dataset.uid);
+    if (member) {
+      Cloud._reactTarget = member.dataset.uid;
+      const t = $c("#react-target");
+      if (t) t.textContent = "reacting to " + ((Cloud.members[member.dataset.uid] || {}).displayName || "player") + " — tap an emoji!";
+      renderPeek(member.dataset.uid);
+    }
     return;
   }
   try {
