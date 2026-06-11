@@ -39,14 +39,15 @@ async function initFirebase() {
 function cleanUsername(u) { return String(u || "").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 15); }
 
 async function loadProfile() {
-  const snap = await fb.getDoc(fb.doc(fb.db, "users", Cloud.user.uid));
-  if (!snap.exists()) { Cloud.profile = null; return; }
   const banned = await fb.getDoc(fb.doc(fb.db, "banned", Cloud.user.uid));
   if (banned.exists()) {
+    Cloud.profile = null;
     await fb.signOut(fb.auth);
     cloudToast("🚫 This account was removed by the league admin.");
     return;
   }
+  const snap = await fb.getDoc(fb.doc(fb.db, "users", Cloud.user.uid));
+  if (!snap.exists()) { Cloud.profile = null; return; }
   Cloud.profile = snap.data();
   const setup = await fb.getDoc(fb.doc(fb.db, "config", "setup"));
   Cloud.profile.isAdmin = setup.exists() && setup.data().adminUsername === Cloud.profile.username;
@@ -354,4 +355,11 @@ document.body.addEventListener("click", async (e) => {
 Cloud.renderLeague = renderLeague;
 Cloud.bootstrapSetup = bootstrapSetup;
 Cloud.signUpFn = signUp;
+/* internal handle — used for provisioning/testing and admin cleanup */
+Cloud._api = {
+  createLeague, joinLeagueByCode, joinLeagueById, adminRemove, adminSeedDeadlines,
+  bootstrapSetup, memberTotals, scorePick, signIn, loadProfile,
+  signOut: () => fb.signOut(fb.auth),
+  fb: () => fb,
+};
 initFirebase();
