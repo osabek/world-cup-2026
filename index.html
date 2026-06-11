@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ Road to the Cup 2026 🏆</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="pitch-bg"></div>
+
+<header id="topbar">
+  <div class="title-wrap">
+    <span class="ball-spin">⚽</span>
+    <h1>ROAD TO THE CUP <span class="year">2026</span></h1>
+    <span class="trophy-bounce">🏆</span>
+  </div>
+  <div class="topbar-right">
+    <button id="sync-btn" class="sync-btn hidden" title="Get the latest real scores!">🔄 SYNC SCORES</button>
+    <span id="live-badge" class="live-badge hidden">🔴 LIVE updates ON</span>
+    <span id="last-sync" class="last-sync"></span>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button class="tab active" data-tab="groups">🥅 Groups</button>
+  <button class="tab" data-tab="bracket">🏆 Bracket</button>
+  <button class="tab" data-tab="teams">👕 Teams</button>
+  <button class="tab" data-tab="champion">🥇 My Champion</button>
+  <button class="tab" data-tab="settings">⚙️ Settings</button>
+</nav>
+
+<main>
+  <section id="view-groups" class="view"></section>
+  <section id="view-bracket" class="view hidden"></section>
+  <section id="view-teams" class="view hidden"></section>
+  <section id="view-champion" class="view hidden"></section>
+  <section id="view-settings" class="view hidden">
+    <div class="settings-card">
+      <h2>⚙️ Game Settings</h2>
+
+      <div class="setting-block">
+        <h3>📡 Real score updates</h3>
+        <p class="setting-help">How should real World Cup results get into the game?</p>
+        <label class="radio-row">
+          <input type="radio" name="updateMode" value="off">
+          <span><b>Off</b> — scenario mode only, no real scores</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="updateMode" value="sync">
+          <span><b>Sync button</b> — a 🔄 SYNC SCORES button appears up top; press it to pull in the latest real results</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="updateMode" value="live">
+          <span><b>Live-score API</b> — real scores update automatically every minute while the game is open</span>
+        </label>
+      </div>
+
+      <div class="setting-block">
+        <h3>🔑 Score source</h3>
+        <p class="setting-help">Leave blank to use the free built-in score feed (no key needed — works everywhere,
+          including the hosted version). Or paste a free
+          <a href="https://www.football-data.org/client/register" target="_blank">football-data.org</a> API key to use the
+          official-data API instead (key mode only works when running the local server on this Mac).</p>
+        <input type="text" id="api-key" placeholder="football-data.org API key (optional)" autocomplete="off">
+      </div>
+
+      <div class="setting-block danger-zone">
+        <h3>🧹 Wipe all scores</h3>
+        <p class="setting-help">Clears <b>everything</b> — your scenario picks <i>and</i> the real results — for a totally fresh start.
+          Real results will be restored automatically the next time you press Sync or when Live updates are on.</p>
+        <button id="wipe-btn" class="wipe-btn">🧹 WIPE ALL SCORES</button>
+      </div>
+
+      <div class="setting-block">
+        <h3>ℹ️ How to play</h3>
+        <p class="setting-help">
+          Tap the <b>+</b> and <b>−</b> buttons to set scores in the groups — the tables update instantly and the top teams
+          jump into the bracket. In the bracket, just <b>tap a team</b> to send them through! Real results that come in from
+          Sync/Live get a 🔒 lock — tap the ✏️ to play "what-if" with them anyway. Click any flag to meet the players! ⚽
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Team / squad modal -->
+<div id="modal-backdrop" class="hidden">
+  <div id="team-modal"></div>
+</div>
+
+<div id="toast" class="hidden"></div>
+<div id="confetti-layer"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
