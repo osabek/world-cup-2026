@@ -225,8 +225,9 @@ function renderLeague() {
   if (!el) return;
 
   if (!Cloud.on) {
-    el.innerHTML = `<div class="champ-empty">☁️ <b>League play is almost ready!</b><br>
-      The cloud connection hasn't been switched on yet — check back soon.</div>`;
+    el.innerHTML = `<div class="champ-empty">☁️ <b>Connecting to league play…</b><br>
+      If this sticks around, your game loaded an old cached copy. Tap below to grab the latest!<br>
+      <button class="sim-btn gold" data-act="lg-hardreload" style="margin-top:14px">🔄 RELOAD THE GAME</button></div>`;
     return;
   }
   if (!Cloud.user || !Cloud.profile) {
@@ -328,6 +329,10 @@ function err(msg) { const e = $c("#lg-err"); if (e) e.textContent = msg; }
 document.body.addEventListener("click", async (e) => {
   const el = e.target.closest("[data-act]");
   const act = el?.dataset.act;
+  if (act === "lg-hardreload") {
+    location.replace(location.pathname + "?fresh=" + Date.now());
+    return;
+  }
   if (!act || !act.startsWith("lg-")) {
     const member = e.target.closest(".lg-member[data-uid]");
     if (member) renderPeek(member.dataset.uid);
