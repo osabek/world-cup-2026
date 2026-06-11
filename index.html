@@ -30,6 +30,7 @@
   <button class="tab" data-tab="live">📺 Live</button>
   <button class="tab" data-tab="teams">👕 Teams</button>
   <button class="tab" data-tab="scorecard">🏅 Scorecard</button>
+  <button class="tab" data-tab="league">👥 League</button>
   <button class="tab" data-tab="champion">🥇 My Champion</button>
   <button class="tab" data-tab="settings">⚙️ Settings</button>
 </nav>
@@ -42,6 +43,7 @@
   <section id="view-live" class="view hidden"></section>
   <section id="view-teams" class="view hidden"></section>
   <section id="view-scorecard" class="view hidden"></section>
+  <section id="view-league" class="view hidden"></section>
   <section id="view-champion" class="view hidden"></section>
   <section id="view-settings" class="view hidden">
     <div class="settings-card">
@@ -113,6 +115,8 @@
 <div id="toast" class="hidden"></div>
 <div id="confetti-layer"></div>
 
+<script src="firebase-config.js"></script>
 <script src="app.js"></script>
+<script type="module" src="cloud.js"></script>
 </body>
 </html>

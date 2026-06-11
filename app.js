@@ -216,6 +216,7 @@ function renderGroups() {
   let html = `<div class="sim-bar">
     <button class="sim-btn" data-act="sim-all-groups">🎲 SIM ALL GROUPS</button>
     <button class="sim-btn gold" data-act="sim-tournament">🎲🏆 SIM WHOLE TOURNAMENT</button>
+    <button class="sim-btn teal" data-act="auto-open">🔮 AUTO-PREDICT OPEN GAMES</button>
   </div><div class="groups-grid">`;
 
   // third-place race card
@@ -264,7 +265,9 @@ function renderGroups() {
       }
       html += `</span>
         <span class="side away"><span class="tname" data-team="${m.away}">${esc(A.name)}</span><span class="flag" data-team="${m.away}">${A.flag}</span></span>
-        <span class="match-extra">${r ? chipFor(r.source) : ""}`;
+        <span class="match-extra">${r ? chipFor(r.source) : ""}${lockChip(m.match, !!App.state.real[k])}`;
+      if (!locked && !(inLeague() && lockInfo(m.match).locked && !App.state.real[k]))
+        html += `<button class="mini-btn" data-act="auto" title="🔮 Auto-predict this score!">🔮</button>`;
       if (locked) html += `<button class="mini-btn" data-act="whatif" title="Play what-if with this real result">✏️</button>`;
       else if (App.state.real[k]) html += `<button class="mini-btn" data-act="restore" title="Back to the real score">↩️</button>`;
       if (!locked && r && r.source !== "real") html += `<button class="mini-btn" data-act="clear" title="Clear">✖️</button>`;
@@ -280,6 +283,7 @@ function renderGroups() {
 function bumpScore(matchNum, side, delta) {
   const k = "m" + matchNum;
   if (App.state.real[k] && !App.state.overrides[k]) return; // locked
+  if (blockIfLocked(matchNum)) return;
   let s = App.state.scenario[k];
   if (!s) {
     const seed = App.state.real[k];
@@ -289,6 +293,7 @@ function bumpScore(matchNum, side, delta) {
   else s[side] = s[side] == null ? 0 : Math.max(0, s[side] - 1);
   const other = side === "h" ? "a" : "h";
   if (s[other] == null) s[other] = 0;
+  if (window.Cloud && !App.state.real[k]) Cloud.submitPick(matchNum, s);
   save(); renderAll();
 }
 
@@ -315,7 +320,7 @@ function koMatchHtml(m, res, label) {
   const src = r ? r.source : null;
   return `<div class="ko-match">
     <div class="ko-meta"><span>M${m.match} · ${fmtDate(m.date)}</span>
-      <span class="ko-badges">${r ? chipFor(src) : esc((m.venue || "").split(",")[1] || m.venue || "")}${canPens ? `<button class="mini-btn" data-act="pens" data-match="${m.match}" title="Settle it on penalties!">🥅</button>` : ""}${locked ? `<button class="mini-btn" data-act="whatif" data-match="${m.match}">✏️</button>` :
+      <span class="ko-badges">${r ? chipFor(src) : esc((m.venue || "").split(",")[1] || m.venue || "")}${lockChip(m.match, !!App.state.real[k])}${canPens ? `<button class="mini-btn" data-act="auto" data-match="${m.match}" title="🔮 Auto-predict!">🔮</button><button class="mini-btn" data-act="pens" data-match="${m.match}" title="Settle it on penalties!">🥅</button>` : ""}${locked ? `<button class="mini-btn" data-act="whatif" data-match="${m.match}">✏️</button>` :
       (App.state.real[k] ? `<button class="mini-btn" data-act="restore" data-match="${m.match}">↩️</button>` : "")}</span></div>
     ${sideHtml(d.home, score("h"))}
     ${sideHtml(d.away, score("a"))}
@@ -343,9 +348,11 @@ function renderBracket() {
 function pickWinner(matchNum, code) {
   const k = "m" + matchNum;
   if (App.state.real[k] && !App.state.overrides[k]) { toast("That one really happened! Tap ✏️ to play what-if."); return; }
+  if (blockIfLocked(matchNum)) return;
   const cur = App.state.scenario[k];
   if (cur && cur.winner === code) delete App.state.scenario[k];
   else App.state.scenario[k] = { winner: code };
+  if (window.Cloud && !App.state.real[k]) Cloud.submitPick(matchNum, App.state.scenario[k] || null);
   save(); renderAll();
 }
 
@@ -974,10 +981,14 @@ async function pollFeed(applyToo) {
   try {
     App.feed = { matches: await fetchScoresESPN(), at: Date.now() };
   } catch { /* offline — keep old feed */ }
+  buildKickoffs();
+  kickoffWarnings();
   renderTodayStrip();
   if (!$("#view-live").classList.contains("hidden")) renderLive();
   if (applyToo !== false && App.state.settings.mode === "live" && App.feed.matches.length) {
     applyFeed(App.feed.matches, false);
+  } else if (Object.keys(App.kickoffs).some(n => { const li = lockInfo(Number(n)); return li.known && !li.locked && li.minsToCutoff <= 60; })) {
+    renderGroups(); // keep the "Xm to lock" countdowns fresh
   }
 }
 function localDay(iso) { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
@@ -1035,6 +1046,109 @@ function renderLive() {
       ? `<div class="lv-section"><h3>😴 No games today</h3>${section("📅 NEXT UP — " + (nextDay ? fmtDate(nextDay) : ""), tomorrow) || "<p>Check back during the tournament!</p>"}</div>` : ""}
     <p class="lv-foot">Updates every minute · last checked ${App.feed.at ? new Date(App.feed.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "—"}</p>
   </div>`;
+}
+
+/* ───────────────────────── kickoffs & prediction locks ───────────────────────── */
+App.kickoffs = (() => { try { return JSON.parse(localStorage.getItem("wc26-kickoffs") || "{}"); } catch { return {}; } })();
+function buildKickoffs() {
+  if (!App.feed.matches.length || !App.teams) return;
+  const idx = buildNameIndex();
+  const realRes = resolveBracket(realResult);
+  for (const fm of App.feed.matches) {
+    if (!fm.t) continue;
+    const hc = idx[normName(fm.home)], ac = idx[normName(fm.away)];
+    if (!hc || !ac) continue;
+    let m = App.schedule.groupMatches.find(m2 =>
+      ((m2.home === hc && m2.away === ac) || (m2.home === ac && m2.away === hc)) && dateClose(m2.date, fm.date));
+    if (!m) m = allKnockoutMatches().find(km => {
+      const d = realRes.out[km.match];
+      return d && d.home.code && d.away.code && dateClose(km.date, fm.date) &&
+        ((d.home.code === hc && d.away.code === ac) || (d.home.code === ac && d.away.code === hc));
+    });
+    if (m) App.kickoffs[m.match] = fm.t;
+  }
+  try { localStorage.setItem("wc26-kickoffs", JSON.stringify(App.kickoffs)); } catch {}
+}
+/* predictions lock 5 minutes before kickoff */
+function lockInfo(num) {
+  const k = App.kickoffs[num];
+  if (!k) return { locked: false, known: false };
+  const cutoff = new Date(k).getTime() - 5 * 60 * 1000;
+  return { locked: Date.now() >= cutoff, known: true, cutoff, minsToCutoff: Math.ceil((cutoff - Date.now()) / 60000) };
+}
+function inLeague() { return !!(window.Cloud && Cloud.user && Cloud.profile && Cloud.profile.leagueId); }
+function lockChip(num, hasReal) {
+  if (hasReal) return "";
+  const li = lockInfo(num);
+  if (!li.known) return "";
+  if (li.locked) return '<span class="chip lockchip">🔒 picks locked</span>';
+  if (li.minsToCutoff <= 60) return `<span class="chip soonchip">⏳ ${li.minsToCutoff}m to lock</span>`;
+  return "";
+}
+App._warned = new Set();
+function kickoffWarnings() {
+  for (const numS of Object.keys(App.kickoffs)) {
+    const num = Number(numS);
+    const li = lockInfo(num);
+    if (!li.known || li.locked || li.minsToCutoff > 15 || App._warned.has(num)) continue;
+    App._warned.add(num);
+    const gm = App.schedule.groupMatches.find(m => m.match === num);
+    const label = gm ? `${team(gm.home).name} v ${team(gm.away).name}` : `Match ${num}`;
+    toast(`⏰ ${label} is about to begin — picks lock in ${li.minsToCutoff} min!`);
+    sfx("whistle");
+  }
+}
+function blockIfLocked(num) {
+  if (!inLeague()) return false;
+  const k = "m" + num;
+  if (App.state.real[k]) return false; // finished/live games are what-if territory, not predictions
+  const li = lockInfo(num);
+  if (!li.locked) return false;
+  toast("🔒 Too late! That game is about to begin (or already has) — predictions are closed.");
+  sfx("save");
+  return true;
+}
+
+/* ───────────────────────── auto-predictor 🔮 ───────────────────────── */
+function predictScore(hc, ock) {
+  const hp = powerOf(hc), ap = powerOf(ock);
+  const lh = Math.max(.15, 1.4 + (hp - ap) * .055), la = Math.max(.15, 1.25 + (ap - hp) * .055);
+  let h = Math.floor(lh), a = Math.floor(la);
+  if (h === a && hp - ap >= 2) h++;
+  else if (h === a && ap - hp >= 2) a++;
+  return { h, a };
+}
+function autoPredictMatch(num) {
+  const k = "m" + num;
+  if (App.state.real[k] && !App.state.overrides[k]) return false;
+  if (inLeague() && lockInfo(num).locked && !App.state.real[k]) return false;
+  const gm = App.schedule.groupMatches.find(m => m.match === num);
+  if (gm) App.state.scenario[k] = predictScore(gm.home, gm.away);
+  else {
+    const d = resolveBracket(effResult).out[num];
+    if (!d || !d.home.code || !d.away.code) return false;
+    const s = predictScore(d.home.code, d.away.code);
+    if (s.h === s.a) s[powerOf(d.home.code) >= powerOf(d.away.code) ? "h" : "a"]++;
+    App.state.scenario[k] = { ...s, winner: s.h > s.a ? d.home.code : d.away.code };
+  }
+  if (window.Cloud) Cloud.submitPick(num, App.state.scenario[k]);
+  return true;
+}
+function autoPredictOpen() {
+  let n = 0;
+  for (const m of App.schedule.groupMatches) if (!effResult(m.match) && autoPredictMatch(m.match)) n++;
+  let guard = 0;
+  while (guard++ < 40) {
+    const res = resolveBracket(effResult);
+    const next = allKnockoutMatches().find(m => {
+      const d = res.out[m.match], k = "m" + m.match;
+      return d.home.code && d.away.code && !d.winner && !(App.state.real[k] && !App.state.overrides[k]);
+    });
+    if (!next || !autoPredictMatch(next.match)) break;
+    n++;
+  }
+  save(); renderAll(); sfx("tick");
+  toast(n ? `🔮 The crystal ball predicted ${n} games!` : "Nothing open to predict!");
 }
 
 /* ───────────────────────── prediction scorecard ───────────────────────── */
@@ -1213,6 +1327,7 @@ function switchTab(name) {
   $("#view-" + name).classList.remove("hidden");
   if (name === "live") { renderLive(); pollFeed(false); }
   if (name === "scorecard") renderScorecard();
+  if (name === "league" && window.Cloud && Cloud.renderLeague) Cloud.renderLeague();
 }
 function wireEvents() {
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => switchTab(t.dataset.tab)));
@@ -1237,6 +1352,13 @@ function wireEvents() {
       const row = actEl.closest("[data-match]") || actEl;
       const num = Number(actEl.dataset.match || (row && row.dataset.match));
       if (act === "inc" || act === "dec") { e.stopPropagation(); sfx("tick"); return bumpScore(num, actEl.dataset.side, act === "inc" ? 1 : -1); }
+      if (act === "auto") {
+        e.stopPropagation();
+        if (autoPredictMatch(num)) { save(); renderAll(); sfx("tick"); toast("🔮 Predicted!"); }
+        else toast("🔒 Can't predict that one — it's locked or not ready yet.");
+        return;
+      }
+      if (act === "auto-open") return autoPredictOpen();
       if (act === "sim-group") return simGroupMatches(actEl.dataset.group);
       if (act === "sim-all-groups") return simAllGroups();
       if (act === "sim-bracket") return simKnockoutRest();
@@ -1252,7 +1374,12 @@ function wireEvents() {
         if (name) { App.state.rival = { name: name.trim().slice(0, 20) || "Rival", preds: {} }; save(); renderScorecard(); }
         return;
       }
-      if (act === "clear") { delete App.state.scenario["m" + num]; save(); return renderAll(); }
+      if (act === "clear") {
+        if (blockIfLocked(num)) return;
+        delete App.state.scenario["m" + num];
+        if (window.Cloud && !App.state.real["m" + num]) Cloud.submitPick(num, null);
+        save(); return renderAll();
+      }
       if (act === "whatif") {
         App.state.overrides["m" + num] = true;
         const real = App.state.real["m" + num];

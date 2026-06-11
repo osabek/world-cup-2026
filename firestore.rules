@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function notBanned() {
+      return !exists(/databases/$(database)/documents/banned/$(request.auth.uid));
+    }
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/config/setup)
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && myProfile().username == get(/databases/$(database)/documents/config/setup).data.adminUsername;
+    }
+    // Predictions close 5 minutes (300000 ms) before kickoff.
+    function deadlineOk(matchKey) {
+      return !exists(/databases/$(database)/documents/config/deadlines)
+        || !(matchKey in get(/databases/$(database)/documents/config/deadlines).data)
+        || request.time.toMillis() < get(/databases/$(database)/documents/config/deadlines).data[matchKey] - 300000;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid && notBanned();
+      allow delete: if isAdmin();
+    }
+
+    // username uniqueness reservations (doc id = lowercase username)
+    match /usernames/{uname} {
+      allow read: if true;
+      allow create: if signedIn() && notBanned() && request.resource.data.uid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /banned/{uid} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /config/{docId} {
+      allow read: if true;
+      // setup doc is bootstrapped once at provisioning time, then admin-only
+      allow create: if signedIn() && (docId != 'setup' ? isAdmin() : !exists(/databases/$(database)/documents/config/setup));
+      allow update, delete: if isAdmin();
+    }
+
+    match /leagues/{lid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && notBanned() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isAdmin();
+
+      match /members/{uid} {
+        allow read: if signedIn();
+        allow create: if signedIn() && notBanned() && request.auth.uid == uid;
+        allow delete: if isAdmin() || request.auth.uid == uid;
+      }
+
+      // one doc per pick: id = "<uid>_m<matchNumber>"
+      match /picks/{pickId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn() && notBanned()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.match is int
+          && pickId == request.auth.uid + '_m' + string(request.resource.data.match)
+          && exists(/databases/$(database)/documents/leagues/$(lid)/members/$(request.auth.uid))
+          && deadlineOk('m' + string(request.resource.data.match));
+        allow delete: if isAdmin()
+          || (signedIn() && pickId.split('_')[0] == request.auth.uid
+              && deadlineOk(pickId.split('_')[1]));
+      }
+    }
+  }
+}

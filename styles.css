@@ -467,6 +467,37 @@ table.career { width: 100%; border-collapse: collapse; background: #fff; border-
 .star-row b { color: #b8860b; }
 .battle-verdict { text-align: center; padding: 10px 0 16px; font-size: 1.05rem; }
 
+/* ───────── league & locks ───────── */
+.sim-btn.teal { background: #00897b; }
+.chip.lockchip { background: #ffcdd2; color: #b71c1c; }
+.chip.soonchip { background: #ffe0b2; color: #b35a00; animation: pulse 1.6s infinite; }
+.lg-wrap, .lg-auth { max-width: 720px; margin: 0 auto; }
+.lg-wrap { display: flex; flex-direction: column; gap: 16px; }
+.lg-card h2 { background: #00897b; }
+.lg-auth h2 { background: #00897b; }
+.lg-form { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.lg-form input {
+  padding: 12px 14px; border-radius: 12px; border: 3px solid #cfe3cf;
+  font-family: 'Fredoka'; font-size: 1.05rem; font-weight: 600;
+}
+.lg-form .row { display: flex; gap: 10px; flex-wrap: wrap; }
+.lg-err { color: #c62828; font-weight: 700; min-height: 1.2em; }
+.lg-or { text-align: center; color: #88a18a; font-weight: 700; }
+.lg-out { align-self: flex-start; margin-top: 4px; }
+.lg-codebar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 16px; background: #e0f2f1; font-size: 1rem;
+}
+.lg-code {
+  font-family: 'Luckiest Guy'; font-size: 1.5rem; letter-spacing: 4px;
+  color: #00695c; background: #fff; border-radius: 10px; padding: 4px 14px;
+  border: 2px dashed #00897b;
+}
+.lg-member { cursor: pointer; }
+.lg-pickrow { grid-template-columns: 1fr auto auto auto; font-size: .9rem; }
+.lg-admin h2 { background: #b71c1c; }
+.lg-del { font-size: .75rem; padding: 8px 12px; margin-left: auto; }
+
 /* ───────── penalty shootout ───────── */
 .pk-box { max-width: 520px; }
 .pk-sub { color: #5c7a5e; }
